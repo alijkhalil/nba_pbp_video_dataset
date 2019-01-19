@@ -1,0 +1,17 @@
+Useful NBA stats API endpoint calls
+
+
+http://data.nba.net/10s/prod/v1/calendar.json  (all days with games available for analysis with current API)
+http://data.nba.net/10s/prod/v1/20180111/scoreboard.json  (games of a particular day)
+
+http://data.nba.net/10s/prod/v2/2018/teams.json  (team names and ids)
+
+http://data.nba.net/10s/prod/v1/2018/players.json  (every player id and basic info for a particular season)
+http://data.nba.net/10s/prod/v1/2018/players/{{personId}}_profile.json  (player id stats - not needed now)
+https://stats.nba.com/stats/commonplayerinfo?LeagueID=00&PlayerID=201935&SeasonType=Regular+Season  (more player id info)
+
+https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2018/scores/pbp/0021800621_full_pbp.json  (full play by play list)
+https://stats.nba.com/stats/videoevents?GameEventID=8&GameID=0021800607  (event video info JSON with UUID)
+https://secure.nba.com/video/wsc/league/2ad5b72b-184f-f5e0-4739-75410d30f707.secure.xml  (event video XML with mp4 links)
+
+http://data.nba.net/10s/prod/v1/today.json  (other notable API endpoints)
