@@ -45,8 +45,9 @@ function another_thread_taking_care_of_it(game_id) {
 	return already_done
 }
 
-function strip_whitespace(str) {
-    return str.toString().replace(/\s+/g, '')
+//Eliminate non-alphanumeric or '-' character
+function sanitize_input(str) {
+	return str.toString().replace(/[^\-a-zA-Z0-9]/gi,'')	
 }
 
 function trim_preceeding_zeros(num_str) {
@@ -235,7 +236,7 @@ function get_all_game_info_dict() {
     //Get game ID's
     var games_id_info = []
     for each (var date_str in game_days) {
-        var date_str = strip_whitespace(date_str)
+        var date_str = sanitize_input(date_str)
         
         if(!is_past_cur_date(date_str)) {            
             var cur_URL_str = GAMES_ON_DAY_TEMPLATE_URL.replace("DATE_STR", date_str)
@@ -245,10 +246,10 @@ function get_all_game_info_dict() {
                 var game_info = json_scoreboard_obj['games']
                 
                 for each (var game_row in game_info) {
-                    games_id_info.push({ 'year': strip_whitespace(game_row['seasonYear']), 
-                                            'id': strip_whitespace(game_row['gameId']),
-                                            'htid': strip_whitespace(game_row['hTeam']['teamId']),
-                                            'vtid': strip_whitespace(game_row['vTeam']['teamId']) })
+                    games_id_info.push({ 'year': sanitize_input(game_row['seasonYear']), 
+                                            'id': sanitize_input(game_row['gameId']),
+                                            'htid': sanitize_input(game_row['hTeam']['teamId']),
+                                            'vtid': sanitize_input(game_row['vTeam']['teamId']) })
                 }
             }
         }
@@ -568,7 +569,7 @@ while (games_id_info.length > 0) {
             var prev_had_video = false
             
             for (var play_i = 0; play_i < pbp_list.length; ++play_i) {
-                var event_id = strip_whitespace(pbp_list[play_i]['evt'])
+                var event_id = sanitize_input(pbp_list[play_i]['evt'])
                 
                 var event_dir_string = game_dir_string + event_id + "/"
                 var event_dir = new File(event_dir_string)
@@ -585,9 +586,9 @@ while (games_id_info.length > 0) {
                     
                     if (!skip_next) {
                         var uuid = get_event_UUID(cur_game_id, event_id)
-                        if (uuid && !is_static_uuid(strip_whitespace(uuid))) {
+                        if (uuid && !is_static_uuid(sanitize_input(uuid))) {
                             //Keep track of repeated UUID's bc they are an indication of static videos
-                            uuid = strip_whitespace(uuid)
+                            uuid = sanitize_input(uuid)
                             
                             if (!(uuid in UUID_COUNT_LOOKUP)) {
                                 UUID_COUNT_LOOKUP[uuid] = 1
@@ -601,8 +602,8 @@ while (games_id_info.length > 0) {
                                 }
                             }
                             
-                            //Get XML string
-                            var final_string_set = get_event_XML_string(pbp_list[play_i], uuid, 
+							//Get XML string
+							var final_string_set = get_event_XML_string(pbp_list[play_i], uuid, 
                                                                             team_ids, 
                                                                             period_list[play_i], 
                                                                             prev_had_video)
@@ -627,7 +628,7 @@ while (games_id_info.length > 0) {
                                     var final_XML_filename = event_dir_string + "event.xml"
                                     if (overwrite_prev && play_i > 0) {
                                         final_XML_filename = (game_dir_string + 
-                                                                strip_whitespace(pbp_list[play_i-1]['evt']) + 
+                                                                sanitize_input(pbp_list[play_i-1]['evt']) + 
                                                                 "/event.xml")
                                     }
                                     
