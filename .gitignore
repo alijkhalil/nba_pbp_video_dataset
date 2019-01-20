@@ -1,2 +1,5 @@
-game_events
-logs
+game_events/*
+!game_events/.gitkeep
+
+logs/*
+!logs/.gitkeep
