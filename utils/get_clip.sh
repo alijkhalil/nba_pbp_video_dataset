@@ -15,7 +15,7 @@ if [ $? -eq 0 ]; then
 fi
 
 #Get mp4 clip
-wget -O "$2/$FILENAME" $1 2>/dev/null 
+wget --timeout=45 --tries=18 --retry-connrefused -O "$2/$FILENAME" $1 2>/dev/null 
 
 #Check that the file is actually an mp3
 file "$2/$FILENAME" | grep -q "MP4"

@@ -22,6 +22,10 @@ VID_UUID_XML_TEMPLATE_URL = "https://secure.nba.com/video/wsc/league/UUID_VAL.se
   
 
 //Global variables
+NO_SOCK_PORT_NUM=-1
+SOCKS_PORT_NUM=arguments[0]
+
+PRINT_JSON_ERRORS=false
 PRINT_BAD_UUIDS=true
 MAX_ALLOWED_DUPS=5
 
@@ -31,16 +35,16 @@ UUID_COUNT_LOOKUP = {}
 
 STATIC_VIDEO_UUID_BLACKLIST = [ "4549dfbf-fde2-4dcc-8065-afade5ada267" ]
 
-BASE_DIR = "/mnt/dataset_storage/nba_videos/"
+BASE_DIR = arguments[1] + "/"
+UTILS_DIR = BASE_DIR + "utils/"
 DOWNLOADS_DIR = "game_events/"
 DONE_FILE_NAME = "done"
-
 
 
 //General functionality
 function another_thread_taking_care_of_it(game_id) {
 	feed = { output: '' }
-	already_done = runCommand(BASE_DIR + "check_if_game_being_processed.sh", game_id, feed)
+	already_done = runCommand(UTILS_DIR + "check_if_game_being_processed.sh", game_id, feed)
 	
 	return already_done
 }
@@ -48,6 +52,10 @@ function another_thread_taking_care_of_it(game_id) {
 //Eliminate non-alphanumeric or '-' character
 function sanitize_input(str) {
 	return str.toString().replace(/[^\-a-zA-Z0-9]/gi,'')	
+}
+
+function requires_socks() {
+    return !(SOCKS_PORT_NUM == NO_SOCK_PORT_NUM)
 }
 
 function trim_preceeding_zeros(num_str) {
@@ -147,24 +155,34 @@ function print_game_info_dict(game_info) {
 //Script networking wrapper functions (with all assuming input validation already done)
 function download_video_file(link_URL, directory) {
 	feed = { output: '' }
-	success = runCommand(BASE_DIR + "get_clip.sh", link_URL, directory, feed)
+	success = runCommand(UTILS_DIR + "get_clip.sh", link_URL, directory, feed)
 	
 	return !success
 }
 
-function get_json_obj(URL, printError) {
+function get_json_obj(URL, use_socks) {
 	feed = { output: '' }
-	success = runCommand(BASE_DIR + "get_json.sh", URL, feed)
-
+    if (requires_socks() && use_socks) {
+        success = runCommand(UTILS_DIR + "get_json.sh", URL, SOCKS_PORT_NUM, feed)            
+    } else {        
+        success = runCommand(UTILS_DIR + "get_json.sh", URL, feed)
+    }
+    
     var json_obj = null
     try {
         json_obj = JSON.parse(feed.output);
     } catch (err) {
-        printError = (printError != undefined)
-        if (printError) { print(URL, err.toString()) }
+        if (PRINT_JSON_ERRORS) { print(URL, err.toString()) }
     }
     
 	return json_obj
+}
+
+function is_socks_down() {
+    feed = { output: '' }
+    success = runCommand(UTILS_DIR + "check_reverse_tunnel.sh", SOCKS_PORT_NUM, feed)
+    
+    return success
 }
 
 function get_xml_obj(URL) {
@@ -177,7 +195,7 @@ function get_xml_obj(URL) {
     
     //Unforunately, readUrl does not return entire XML so need underlying script 
 	feed = { output: '' }
-	runCommand(BASE_DIR + "get_xml.sh", URL, feed)
+	runCommand(UTILS_DIR + "get_xml.sh", URL, feed)
 
 	return new XML(feed.output);
 }
@@ -186,7 +204,7 @@ function get_xml_obj(URL) {
 //NBA specific API calls for info
 function get_all_game_info_dict() {
     //Get meta info from NBA calender JSON file
-    var json_games_obj = get_json_obj("http://data.nba.net/10s/prod/v1/calendar.json")
+    var json_games_obj = get_json_obj("http://data.nba.net/10s/prod/v1/calendar.json", false)
     if (json_games_obj == null) { return null }
     
     var start_str = json_games_obj['startDate']
@@ -240,7 +258,7 @@ function get_all_game_info_dict() {
         
         if(!is_past_cur_date(date_str)) {            
             var cur_URL_str = GAMES_ON_DAY_TEMPLATE_URL.replace("DATE_STR", date_str)
-            var json_scoreboard_obj = get_json_obj(cur_URL_str)
+            var json_scoreboard_obj = get_json_obj(cur_URL_str, false)
             
             if (json_scoreboard_obj != null) {
                 var game_info = json_scoreboard_obj['games']
@@ -263,10 +281,10 @@ function get_all_game_info_dict() {
 function get_event_UUID(game_num, event_num) {
 	var tmp_UUID_URL = EVENT_UUID_TEMPLATE_URL.replace("GAME_ID_VAL", game_num)
 	tmp_UUID_URL = tmp_UUID_URL.replace("EVENT_ID_VAL", event_num)
-    
-    var json_uuid_obj = get_json_obj(tmp_UUID_URL)
+
+    var json_uuid_obj = get_json_obj(tmp_UUID_URL, true)
     if (json_uuid_obj == null) { return false }
-    
+
     if (json_uuid_obj.resultSets.Meta.videoUrls.length > 0) {
         return json_uuid_obj.resultSets.Meta.videoUrls[0].uuid
     } else {
@@ -280,7 +298,7 @@ function get_player_jersey_num(player_id, team_id, season_str) {
         var final_player_URL = PLAYER_INFO_TEMPLATE_URL.replace("TEAM_ID_VAL", team_id)
         final_player_URL = final_player_URL.replace("SEASON_STR", season_str)
         
-        var json_team_obj = get_json_obj(final_player_URL)
+        var json_team_obj = get_json_obj(final_player_URL, true)
         if (json_team_obj == null) { return MAGIC_ERROR_STR }
                         
         //Scan team's player ID's to find the desired player and get jersey number
@@ -385,7 +403,8 @@ function get_event_XML_string(play_info, uuid_string, team_ids, period, prev_had
 	} else {
 		return [MAGIC_ERROR_STR, skip_next, overwrite_prev]
 	}
-	
+
+    
 	//Get action label information
 	var event_id = parseInt(play_info['etype'])
 	var event_detailed_id = parseInt(play_info['mtype'])
@@ -504,11 +523,13 @@ for (var i = 0; i <= MAX_ALLOWED_DUPS; ++i) {
 
 //Get JSON object with the all game information
 games_id_info = get_all_game_info_dict()
+
 if (games_id_info == null) {
     print("ERROR: Could not get basic info needed from NBA.com")
     quit()
 }
-                   
+
+
 //Get plays for each elapsed game  
 while (games_id_info.length > 0) {
     //Set up variables
@@ -525,8 +546,7 @@ while (games_id_info.length > 0) {
     cur_URL_str = cur_URL_str.replace("GAME_ID", cur_game_id)
 
     //Get JSON object for events if it exists
-    //print(cur_URL_str)
-    var pbp_obj = get_json_obj(cur_URL_str)    
+    var pbp_obj = get_json_obj(cur_URL_str, true)    
     if (pbp_obj != null) {            
         //Prepare filesystem for video/label
         var game_dir_string = BASE_DIR + DOWNLOADS_DIR + cur_game_id + "/"
@@ -536,11 +556,11 @@ while (games_id_info.length > 0) {
         //Check if game is complete 
         if (!(game_dir.isDirectory() && game_done_file.isFile())) {
             //Lock shared process lock		
-            runCommand("lockfile-create", "/tmp/lock.lock", { output: '' })
+            runCommand("lockfile", "/tmp/nba_pbp_lock.lock", { output: '' })
             
             //Check if any other thread is currently processing the same game already
             if (another_thread_taking_care_of_it(cur_game_id)) {
-                runCommand("lockfile-remove", "/tmp/lock.lock", { output: '' })
+                runCommand("rm", "-f", "/tmp/nba_pbp_lock.lock", { output: '' })
                 continue
             }
             
@@ -549,7 +569,7 @@ while (games_id_info.length > 0) {
             game_dir.mkdir()
             
             //Unlock shared process lock
-            runCommand("lockfile-remove", "/tmp/lock.lock", { output: '' })
+            runCommand("rm", "-f", "/tmp/nba_pbp_lock.lock", { output: '' })
             
                 
             //Get play-by-play info and each play's period as lists
@@ -575,8 +595,13 @@ while (games_id_info.length > 0) {
                 var event_dir = new File(event_dir_string)
                 var event_done_file = new File(event_dir_string + DONE_FILE_NAME)
                 
-                //Print progress
+                //Print progress and check SOCKS if necessary
                 if ((play_i % 50) == 0) { 
+                    if (requires_socks() && is_socks_down()) {
+                        print("ERROR: SOCKS proxy is no longer up, so download process will now terminate!")
+                        quit()
+                    }
+                    
                     print("\tOn event #" + play_i + " (out of " + pbp_list.length + ")")
                 }
                 
@@ -607,7 +632,7 @@ while (games_id_info.length > 0) {
                                                                             team_ids, 
                                                                             period_list[play_i], 
                                                                             prev_had_video)
-                                                                                            
+                            			
                             var final_string = final_string_set[0]
                             skip_next = final_string_set[1]
                             overwrite_prev = final_string_set[2]
