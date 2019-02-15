@@ -3,3 +3,6 @@ game_events/*
 
 logs/*
 !logs/.gitkeep
+
+.*
+!/.gitignore
