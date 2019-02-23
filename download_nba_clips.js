@@ -412,13 +412,13 @@ function get_event_XML_string(play_info, uuid_string, team_ids, period, prev_had
     
 	//MAKE == 1
 	if (event_id == 1) {
-		if (event_descript_string.indexOf("3PT Jump Shot") == -1) {
+		if (event_descript_string.toUpperCase().indexOf("3PT") == -1) {
 			final_XML_string += output_label_tags(play_info, "2PT", PBP_PLAYER_ID_KEY, team_ids, period)
 		} else {
 			final_XML_string += output_label_tags(play_info, "3PT", PBP_PLAYER_ID_KEY, team_ids, period)
 		}
 		
-		if (event_descript_string.indexOf("AST") != -1) {
+		if (event_descript_string.toUpperCase().indexOf("AST") != -1) {
 			final_XML_string += output_label_tags(play_info, "ASSIST", PBP_TEAMMATE_ID_KEY, team_ids, period)     
 		}
 		
@@ -464,7 +464,7 @@ function get_event_XML_string(play_info, uuid_string, team_ids, period, prev_had
 	} else if (event_id == 5) {
 		final_XML_string += output_label_tags(play_info, "TURNOVER", PBP_PLAYER_ID_KEY, team_ids, period)
 		
-		if (event_descript_string.indexOf("STEAL") != -1) {
+		if (event_descript_string.toUpperCase().indexOf("STEAL") != -1) {
 			final_XML_string += output_label_tags(play_info, "STEAL", PBP_OPP_PLAYER_ID_KEY, team_ids, period)					
 		}
 
@@ -489,9 +489,9 @@ function get_event_XML_string(play_info, uuid_string, team_ids, period, prev_had
 		final_XML_string += output_label_tags(play_info, "FOULUNIQUE", PBP_PLAYER_ID_KEY, team_ids, period)
 	
 	//TIP == 10 (skip SUB == 8 AND TIMEOUT == 9)	
-	} else if (event_id == 10) {        
+	} else if (event_id == 10) {
         final_XML_string += output_label_tags(play_info, "TIP", PBP_PLAYER_ID_KEY, team_ids, period)
-		
+        
 	// Not a usable event, so return false
 	} else {
 		return [MAGIC_ERROR_STR, skip_next, overwrite_prev]
@@ -541,9 +541,10 @@ while (games_id_info.length > 0) {
     var cur_season = game_dict['year']
     var cur_game_id = game_dict['id']
     var team_ids = [ game_dict['htid'], game_dict['vtid'], cur_season ]
-
+    
     var cur_URL_str = PBP_TEMPLATE_URL.replace("SEASON_VAL", cur_season)
     cur_URL_str = cur_URL_str.replace("GAME_ID", cur_game_id)
+    
 
     //Get JSON object for events if it exists
     var pbp_obj = get_json_obj(cur_URL_str, true)    
