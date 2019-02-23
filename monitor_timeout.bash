@@ -43,6 +43,12 @@ if [ -z $RHINO_LIB_DIR ]; then
     exit 1    
 fi
 
+which ffmpeg > /dev/null 2>&1
+if [ $? -ne 0 ]; then 
+    echo "ERROR: 'ffmpeg' needs to be installed on your machine." >&2
+    exit 1    
+fi
+
 
 # Start script to detect stall in download of videos
 NUM_THREADS=$1
@@ -56,6 +62,9 @@ while true; do
 	DATE=`date +"%H:%M on %m-%d"`
 	CUR_NUM_BYTES=`du -s ./game_events/ | awk '{print $1}'`
 	
+    # Detect and remove any new incomplete downloads
+    ./utils/remove_partial_downloads.bash > /dev/null
+    
     # Check to see if SOCKS still up
     if [ $SOCKS_PORT != $NO_SOCK_VAL ]; then
         ./utils/check_reverse_tunnel.sh $SOCKS_PORT

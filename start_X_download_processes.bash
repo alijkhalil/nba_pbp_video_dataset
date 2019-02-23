@@ -44,6 +44,12 @@ if [ -z $RHINO_LIB_DIR ]; then
     exit 1    
 fi
 
+which ffmpeg > /dev/null 2>&1
+if [ $? -ne 0 ]; then 
+    echo "ERROR: 'ffmpeg' needs to be installed on your machine." >&2
+    exit 1    
+fi    
+
 
 # Clean old files from any download routines
 rm -f /tmp/nba_pbp_lock.lock
