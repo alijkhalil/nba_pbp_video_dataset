@@ -397,7 +397,7 @@ function get_event_XML_string(play_info, uuid_string, team_ids, period, prev_had
         var vid_URL = video_XML_obj.files.file.(@key=="turner_mp4_768x432_1500")[0]
         final_XML_string += output_XML_token("videoLink", vid_URL, 1)
         
-        vid_URL = video_XML_obj.files.file.(@key=="turner_mp4_640x360_600")[0]
+        vid_URL = video_XML_obj.files.file.(@key=="turner_mp4_480x270_400")[0]
         final_XML_string += output_XML_token("videoLink", vid_URL, 1)
 			
 	} else {
