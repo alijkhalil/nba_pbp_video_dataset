@@ -3,7 +3,7 @@
 # Input/envirnoment variable validation
 SCRIPT_DIR=`dirname $0`
 
-NUM_THREADS=64
+NUM_THREADS=32
 SOCKS_PORT_NUM=-1
 
 if [ $# -ge 1 ]; then
