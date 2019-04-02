@@ -43,9 +43,9 @@ Set-up instructions (in order):
 		-background/motivation
 			-NBA seems to blacklist certain cloud provider IPs
 				-presumably to reduce stress on their web infrastructure
-            -since users of this repo are generally individuals with local access to the NBA Stats website, 
-                it is possible to set up a SOCKS proxy on a local machine for the AWS instance 
-                to use in querying the NBA API endpoints needed to obtain this dataset
+			-since users of this repo are generally individuals with local access to the NBA Stats website, 
+				it is possible to set up a SOCKS proxy on a local machine for the AWS instance 
+				to use in querying the NBA API endpoints needed to obtain this dataset
 			-for that reason, this repo contains the 'start_and_monitor_socks' script to set-up a SOCKS proxy 
 				-between a local machine and a remote instance (on a cloud provider)
 		-steps
@@ -126,7 +126,7 @@ Example command sequence to start the download process (after completing set-up)
 
 	$ export JAVA_HOME=/usr/lib/jvm/jre-<jdk_version>-openjdk.x86_64   # 1.8.0 is recommended the JDK version number
 	$ export RHINO_LIB_DIR=/home/<username>/rhino/buildGradle/libs
-	$ ./start_X_download_processes.bash <num_download_processes> [<optional_socks_port>]
+	$ ./start_X_download_processes.bash <num_download_processes> [<optional_local_SOCKS_port>]
 
 
 Files under the hood:
@@ -196,10 +196,13 @@ Resulting dataset format:
 
 	game_events/
 	game_events/<nba_game_id>
+	game_events/<nba_game_id>/done   (indicates entire game finshed downloading)
+	game_events/<nba_game_id>/check_complete   (indicates entire game's mp4 files were validated)
 	game_events/<nba_game_id>/<event_id>
 	game_events/<nba_game_id>/<event_id>/high_res.mp4
 	game_events/<nba_game_id>/<event_id>/low_res.mp4
 	game_events/<nba_game_id>/<event_id>/event.xml
+	game_events/<nba_game_id>/<event_id>/done   (indicates individual event files finished downloading)
     
     
 Information in "event.xml" files:
